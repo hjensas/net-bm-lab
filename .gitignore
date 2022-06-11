@@ -1,0 +1,3 @@
+virtual-switch-images/*
+!virtual-switch-images/README.rst
+

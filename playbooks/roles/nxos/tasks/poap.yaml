@@ -1,0 +1,30 @@
+---
+- name: Write nxos - Configuration
+  become: true
+  ansible.builtin.template:
+    src: templates/conf_nexus.cfg.j2
+    dest: /var/lib/tftpboot/conf_nexus.cfg
+    mode: 0644
+    owner: root
+    group: root
+  register: conf_nexus_cfg
+- name: Write nxos - Configration file md5sum
+  when:
+    - conf_nexus_cfg.changed
+  become: true
+  ansible.builtin.shell: |
+    md5sum /var/lib/tftpboot/conf_nexus.cfg > /var/lib/tftpboot/conf_nexus.cfg.md5
+- name: Write nxos - POAP script
+  become: true
+  ansible.builtin.template:
+    src: templates/poap.script.j2
+    dest: /var/lib/tftpboot/poap.py
+    mode: 0644
+    owner: root
+    group: root
+- name: Update nxos - POAP script md5sum
+  become: true
+  ansible.builtin.shell: |
+    f=/var/lib/tftpboot/poap.py
+    cat $f | sed '/^#md5sum/d' > $f.md5
+    sed -i "s/^#md5sum=.*/#md5sum=$(md5sum $f.md5 | sed 's/ .*//')/" $f

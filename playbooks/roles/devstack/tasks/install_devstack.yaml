@@ -1,0 +1,57 @@
+---
+- name: Clone devstack git repository
+  become: yes
+  become_user: stack
+  ansible.builtin.git:
+    repo: https://opendev.org/openstack/devstack.git
+    dest: /opt/stack/devstack
+- name: Clone networking-baremetal git repository
+  become: yes
+  become_user: stack
+  ansible.builtin.git:
+    repo: https://opendev.org/openstack/networking-baremetal.git
+    dest: /opt/stack/networking-baremetal
+- name: Checkout networking-baremetal gerrit change
+  become: yes
+  become_user: stack
+  shell: |
+    cd /opt/stack/networking-baremetal
+    git fetch https://review.opendev.org/openstack/networking-baremetal {{ networking_baremetal_gerrit_ref }} && git checkout FETCH_HEAD
+    git switch -c {{ networking_baremetal_gerrit_ref }}
+  when:
+    - networking_baremetal_gerrit_ref is defined
+- name: Write devstack local.conf
+  become: yes
+  become_user: stack
+  ansible.builtin.copy:
+    src: local.conf
+    dest: /opt/stack/devstack/local.conf
+    mode: 0644
+  register: local_conf
+- name: Check if devstack is installed
+  become: yes
+  become_user: stack
+  ansible.builtin.stat:
+    path: /opt/stack/logs/devstacklog.txt
+  register: devstack_installed
+- name: Uninstall devstack (running ./unstack.sh)
+  when:
+    - local_conf.changed
+    - devstack_installed.stat.exists
+  become: yes
+  become_user: stack
+  ansible.builtin.shell: |
+    ./unstack.sh
+  args:
+    executable: /bin/bash
+    chdir: /opt/stack/devstack
+- name: Install devstack (running ./stack.sh)
+  when:
+    - local_conf.changed or not devstack_installed.stat.exists
+  become: yes
+  become_user: stack
+  ansible.builtin.shell: |
+    ./stack.sh
+  args:
+    executable: /bin/bash
+    chdir: /opt/stack/devstack

@@ -1,0 +1,21 @@
+---
+- name: Install openvswitch
+  become: true
+  ansible.builtin.apt:
+    name: openvswitch-switch
+    state: present
+- name: Write devstack dataplane bridge netplan config
+  become: true
+  ansible.builtin.copy:
+    src: netplan-dataplane-bridge.yaml
+    dest: /etc/netplan/80-dataplane-bridge.yaml
+    mode: 0640
+    owner: root
+    group: root
+  register: dataplane_bridge
+- name: Apply netplan configuration
+  when:
+    - dataplane_bridge.changed
+  become: true
+  ansible.builtin.shell: |
+    netplan apply

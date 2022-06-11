@@ -1,0 +1,17 @@
+---
+- name: Write nxos dhcp-host file
+  become: true
+  ansible.builtin.copy:
+    src: dhcp-host
+    dest: /etc/dnsmasq.dhcp-hostsdir/nxos
+    mode: 0644
+    owner: root
+    group: root
+- name: Write nxos dhcp-opts file
+  become: true
+  ansible.builtin.copy:
+    src: dhcp-opts
+    dest: /etc/dnsmasq.dhcp-optsdir/nxos
+    mode: 0644
+    owner: root
+    group: root

@@ -1,0 +1,96 @@
+---
+- name: Check if cisco-nxosv image exists
+  stat:
+    path: /var/lib/libvirt/images/cisco-nxosv.qcow2
+  register: stat_nxos_image
+- name: Check if cisco-nxosv image exists in cache
+  stat:
+    path: "{{ image_cache_dir}}/{{ nxos_image | basename }}"
+  register: stat_nxos_image_in_cache
+- name: Write cisco-nxosv image to image cache
+  when: not stat_nxos_image_in_cache.stat.exists
+  copy:
+    src: "{{ nxos_image }}"
+    dest: "{{ image_cache_dir}}/{{ nxos_image | basename }}"
+    mode: 0644
+- name: Write cisco-nxosv image
+  when: not stat_nxos_image.stat.exists
+  become: true
+  copy:
+    remote_src: true
+    src: "{{ image_cache_dir}}/{{ nxos_image | basename }}"
+    dest: /var/lib/libvirt/images/cisco-nxosv.qcow2
+    mode: 0644
+- name: Create cisco-nxosv libvirt VM
+  become: true
+  community.libvirt.virt:
+    command: define
+    xml: "{{ lookup('template', 'nxos_libvirt.xml.j2') }}"
+    uri: qemu:///system
+- name: Start cisco-nxosv libvirt VM
+  become: true
+  community.libvirt.virt:
+    name: cisco-nxosv
+    state: running
+- name: Write cisco-nxosv VM watchdog monitor script
+  become: true
+  ansible.builtin.copy:
+    src: nxos_vm_monitor.sh
+    dest: /usr/local/bin/nxos_vm_monitor.sh
+    mode: 0755
+- name: Write cisco-nxosv VM watchdog monitor service
+  become: true
+  ansible.builtin.copy:
+    src: nxos-vm-monitor.service
+    dest: /etc/systemd/system/nxos-vm-monitor.service
+    mode: 0644
+- name: Start nxos-vm-monitor.service
+  become: true
+  ansible.builtin.systemd:
+    masked: false
+    name: nxos-vm-monitor.service
+    enabled: false
+    state: restarted
+- name: Check if nexusbm0 image exists
+  ansible.builtin.stat:
+    path: /var/lib/libvirt/images/nexusbm0.qcow2
+  register: stat_nexusbm0_image
+- name: Create nexusbm0 disk image
+  when: not stat_nexusbm0_image.stat.exists
+  become: true
+  shell: |
+    qemu-img create -f qcow2 /var/lib/libvirt/images/nexusbm0.qcow2 10G
+- name: Create nexusbm0 libvirt VM
+  become: true
+  community.libvirt.virt:
+    command: define
+    xml: "{{ lookup('file', 'nxos_bm0.xml') }}"
+    autostart: no
+- name: Check if Virual BMC for nexusbm0 exist
+  become: true
+  ansible.builtin.shell: |
+    /opt/vbmc/bin/vbmc show -f value nexusbm0
+  ignore_errors: true
+  register: vbmc_show_nexusbm0
+- name: Set up Virtual BMC for nexusbm0
+  when:
+    - vbmc_show_nexusbm0.rc != 0
+  become: true
+  ansible.builtin.shell: |
+    /opt/vbmc/bin/vbmc add nexusbm0 \
+      --username admin \
+      --password password \
+      --port 6231
+- name: Check if Virual BMC for nexusbm0 is running
+  become: true
+  ansible.builtin.shell: |
+    /opt/vbmc/bin/vbmc show -f value nexusbm0
+  ignore_errors: true
+  register: vbmc_show_nexusbm0
+- name: Start Virtual BMC for nexusbm0
+  when:
+    - vbmc_show_nexusbm0.rc == 0
+    - "'status down' in vbmc_show_nexusbm0.stdout"
+  become: true
+  ansible.builtin.shell: |
+    /opt/vbmc/bin/vbmc start nexusbm0

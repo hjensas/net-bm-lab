@@ -1,0 +1,59 @@
+---
+- name: Enable and start NetworkManager.service
+  become: true
+  ansible.builtin.systemd:
+    name: NetworkManager.service
+    enabled: true
+    state: started
+- name: Remove installer netplan
+  become: true
+  ansible.builtin.file:
+    path: /etc/netplan/00-installer-config.yaml
+    state: absent
+- name: Netplan rendered network-manager
+  become: true
+  ansible.builtin.copy:
+    content: |
+      network:
+        version: 2
+        renderer: NetworkManager
+    dest: /etc/netplan/00-config.yaml
+  register: netplan_config
+- name: Regenerate and apply netplan
+  when:
+    - netplan_config.changed
+  become: true
+  ansible.builtin.shell: |
+    netplan generate
+    netplan apply
+- name: Restart NetworkManager.service
+  when:
+    - netplan_config.changed
+  become: true
+  ansible.builtin.systemd:
+    name: NetworkManager.service
+    enabled: true
+    state: restarted
+- name: Enable routing
+  become: true
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    state: present
+    reload: yes
+    sysctl_file: /etc/sysctl.d/90-router.conf
+    value: "1"
+- name: Write br-lan nmconnection config file
+  become: true
+  ansible.builtin.copy:
+    src: br_lab.nmconnection
+    dest: /etc/NetworkManager/system-connections/br_lab.nmconnection
+    mode: 0600
+    owner: root
+    group: root
+  register: nmconnection_br_lab
+- name: Bring up br-lab
+  when:
+    - nmconnection_br_lab.changed
+  become: true
+  ansible.builtin.shell: |
+    nmcli connection reload

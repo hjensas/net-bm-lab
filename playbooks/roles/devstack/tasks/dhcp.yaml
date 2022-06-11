@@ -1,0 +1,9 @@
+---
+- name: Write devstack dhcp-host file
+  become: true
+  ansible.builtin.copy:
+    src: dhcp-host
+    dest: /etc/dnsmasq.dhcp-hostsdir/devstack
+    mode: 0644
+    owner: root
+    group: root

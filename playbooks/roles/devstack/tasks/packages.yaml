@@ -1,0 +1,6 @@
+---
+- name: ensure packages are present
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - libguestfs-tools

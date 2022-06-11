@@ -1,0 +1,98 @@
+<domain type="kvm">
+  <name>devstack</name>
+  <metadata>
+    <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
+      <libosinfo:os id="http://ubuntu.com/ubuntu/20.04"/>
+    </libosinfo:libosinfo>
+  </metadata>
+  <memory unit="KiB">8388608</memory>
+  <currentMemory unit="KiB">8388608</currentMemory>
+  <vcpu placement="static">2</vcpu>
+  <os>
+    <type arch="x86_64" machine="q35">hvm</type>
+    <boot dev="hd"/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <cpu mode="host-passthrough" check="none">
+    <feature policy='disable' name='vmx'/>
+  </cpu>
+  <clock offset="utc">
+    <timer name="rtc" tickpolicy="catchup"/>
+    <timer name="pit" tickpolicy="delay"/>
+    <timer name="hpet" present="no"/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled="no"/>
+    <suspend-to-disk enabled="no"/>
+  </pm>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <disk type="file" device="disk">
+      <driver name="qemu" type="qcow2"/>
+      <source file="/var/lib/libvirt/images/devstack.img"/>
+      <target dev="vda" bus="virtio"/>
+    </disk>
+    <controller type="usb" index="0" model="qemu-xhci" ports="15"/>
+    <controller type="pci" index="0" model="pcie-root"/>
+    <controller type="pci" index="1" model="pcie-root-port"/>
+    <controller type="pci" index="2" model="pcie-root-port"/>
+    <controller type="pci" index="3" model="pcie-root-port"/>
+    <controller type="pci" index="4" model="pcie-root-port"/>
+    <controller type="pci" index="5" model="pcie-root-port"/>
+    <controller type="pci" index="6" model="pcie-root-port"/>
+    <controller type="pci" index="7" model="pcie-root-port"/>
+    <controller type="pci" index="8" model="pcie-root-port"/>
+    <controller type="pci" index="9" model="pcie-root-port"/>
+    <controller type="pci" index="10" model="pcie-root-port"/>
+    <controller type="pci" index="11" model="pcie-root-port"/>
+    <controller type="pci" index="12" model="pcie-root-port"/>
+    <controller type="pci" index="13" model="pcie-root-port"/>
+    <controller type="pci" index="14" model="pcie-root-port"/>
+    <controller type="sata" index="0"/>
+    <controller type="virtio-serial" index="0"/>
+    <interface type="network">
+      <mac address="22:57:f8:dd:fe:cc"/>
+      <source network="br-lab"/>
+      <model type="virtio"/>
+    </interface>
+    <interface type="bridge">
+      <source bridge="nx001"/>
+      <model type="virtio"/>
+    </interface>
+    <interface type="bridge">
+      <source bridge="nx002"/>
+      <model type="virtio"/>
+    </interface>
+    <serial type="pty">
+      <target type="isa-serial" port="0">
+        <model name="isa-serial"/>
+      </target>
+    </serial>
+    <console type="pty">
+      <target type="serial" port="0"/>
+    </console>
+    <channel type="unix">
+      <target type="virtio" name="org.qemu.guest_agent.0"/>
+      <address type="virtio-serial" controller="0" bus="0" port="1"/>
+    </channel>
+    <input type="keyboard" bus="ps2"/>
+    <graphics type="vnc" port="-1" autoport="yes">
+      <listen type="address"/>
+    </graphics>
+    <audio id="1" type="none"/>
+    <video>
+      <model type="cirrus" vram="16384" heads="1" primary="yes"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x01" function="0x0"/>
+    </video>
+    <memballoon model="virtio"/>
+    <rng model="virtio">
+      <backend model="random">/dev/urandom</backend>
+    </rng>
+  </devices>
+</domain>

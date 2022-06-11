@@ -1,0 +1,13 @@
+[Unit]
+Description=NXOS VM monitor and keepalive
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/nxos_vm_monitor.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

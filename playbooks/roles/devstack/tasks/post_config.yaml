@@ -1,0 +1,303 @@
+---
+- name: Remove devstack router
+  openstack.cloud.router:
+    cloud: devstack-admin
+    state: absent
+    name: router1
+    wait: true
+- name: Remove devstack subnets
+  openstack.cloud.subnet:
+    cloud: devstack-admin
+    state: absent
+    name: "{{ item }}"
+    wait: true
+  loop:
+    - ironic-provision-subnet
+    - shared-subnet
+    - private-subnet
+    - ipv6-private-subnet
+    - ipv6-public-subnet
+- name: Remove devstack networks
+  openstack.cloud.network:
+    cloud: devstack-admin
+    state: absent
+    name: "{{ item }}"
+    wait: true
+  loop:
+    - ironic-provision
+    - shared
+    - public
+    - private
+- name: Ironic inspector DEFAULT/timeout
+  community.general.ini_file:
+    path: /etc/ironic-inspector/inspector.conf
+    section: DEFAULT
+    option: timeout
+    value: 7200
+    state: present
+- name: Ironic inspector processing/processing_hooks
+  community.general.ini_file:
+    path: /etc/ironic-inspector/inspector.conf
+    section: processing
+    option: processing_hooks
+    value: "$default_processing_hooks,extra_hardware,lldp_basic,local_link_connection"
+    state: present
+- name: Ironic conductor/deploy_callback_timeout
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: conductor
+    option: deploy_callback_timeout
+    value: 7200
+    state: present
+- name: Ironic pxe/boot_retry_timeout
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: pxe
+    option: boot_retry_timeout
+    value: 7200
+    state: present
+- name: Ironic neutron/cleaning_network
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: neutron
+    option: cleaning_network
+    value: ironic-cleaning
+    state: present
+- name: Ironic neutron/rescuing_network
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: neutron
+    option: rescuing_network
+    value: ironic-rescue
+    state: present
+- name: Ironic neutron/inspection_network
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: neutron
+    option: inspection_network
+    value: ironic-inspection
+    state: present
+- name: Ironic neutron/inspection_network
+  community.general.ini_file:
+    path: /etc/ironic/ironic.conf
+    section: pxe
+    option: kernel_append_params
+    value: "nofb nomodeset systemd.journald.forward_to_console=yes ipa-insecure=1 ipa-collect-lldp=1"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini networking_baremetal/enabled_devices
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: networking_baremetal
+    option: enabled_devices
+    value: nexus.example.com
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/driver
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: driver
+    value: netconf-openconfig
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/host
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: host
+    value: 192.168.24.21
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/device_params
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: device_params
+    value: "name:nexus"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/username
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: username
+    value: admin
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/password
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: password
+    value: password
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/port_id_re_sub
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: port_id_re_sub
+    value: "pattern:Ethernet,repl:eth"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/allow_agent
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: allow_agent
+    value: "false"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/look_for_keys
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: look_for_keys
+    value: "false"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/hostkey_verify
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: hostkey_verify
+    value: "false"
+    state: present
+- name: Neturon /etc/neutron/plugins/ml2/ml2_conf.ini nexus.example.com/switch_info
+  community.general.ini_file:
+    path: /etc/neutron/plugins/ml2/ml2_conf.ini
+    section: nexus.example.com
+    option: switch_info
+    value: nexus.example.com
+    state: present
+- name: Restart services
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - devstack@q-svc.service
+    - devstack@ir-cond.service
+- name: Pause for 30 seconds to allow services to start
+  ansible.builtin.pause:
+    seconds: 30
+- name: Create ironic networks
+  openstack.cloud.network:
+    cloud: devstack-admin
+    state: present
+    name: "{{ item }}"
+    provider_network_type: vlan
+    provider_physical_network: dataplane
+    wait: true
+  loop:
+    - ironic-provision
+    - ironic-cleaning
+    - ironic-inspection
+    - ironic-rescue
+- name: Create ironic subnets
+  openstack.cloud.subnet:
+    cloud: devstack-admin
+    state: present
+    name: "{{ item }}-subnet"
+    network_name: "{{ item }}"
+    cidr: "172.24.10{{ idx }}.0/24"
+    enable_dhcp: true
+    ip_version: "4"
+    wait: true
+  loop:
+    - ironic-provision
+    - ironic-cleaning
+    - ironic-inspection
+    - ironic-rescue
+  loop_control:
+    index_var: idx
+- name: Create public network
+  openstack.cloud.network:
+    cloud: devstack-admin
+    state: present
+    name: public
+    external: true
+    provider_network_type: flat
+    provider_physical_network: public
+    wait: true
+- name: Create public subnet
+  openstack.cloud.subnet:
+    cloud: devstack-admin
+    state: present
+    name: public-subnet
+    network_name: public
+    cidr: 172.24.5.0/24
+    allocation_pool_start: 172.24.5.100
+    allocation_pool_end: 172.24.5.199
+    wait: true
+- name: Create neutron router
+  openstack.cloud.router:
+    cloud: devstack-admin
+    state: present
+    name: router1
+    network: public
+    enable_snat: false
+    external_fixed_ips:
+      - subnet: public-subnet
+        ip: 172.24.5.254
+    interfaces:
+      - ironic-provision-subnet
+      - ironic-cleaning-subnet
+      - ironic-inspection-subnet
+      - ironic-rescue-subnet
+    wait: true
+- name: Reboot devstack node to clean up outdated networking
+  become: true
+  ansible.builtin.reboot:
+- name: Add routes to the ironic networks
+  become: true
+  shell: |
+    ip route add 172.24.100.0/24 dev br-ex via 172.24.5.254
+    ip route add 172.24.101.0/24 dev br-ex via 172.24.5.254
+    ip route add 172.24.102.0/24 dev br-ex via 172.24.5.254
+    ip route add 172.24.103.0/24 dev br-ex via 172.24.5.254
+- name: Kill tftp servers
+  become: true
+  shell: |
+    /usr/bin/pkill in.tftpd
+- name: Restart xinetd service
+  become: true
+  ansible.builtin.systemd:
+    name: xinetd.service
+    state: restarted
+- name: write nxos_bm0 ironic node yaml
+  become: true
+  become_user: stack
+  copy:
+    dest: /opt/stack/nxos_bm0.yaml
+    content: |
+      nodes:
+      - name: nxos_bm0
+        driver: ipmi
+        driver_info:
+          ipmi_address: 192.168.24.1
+          ipmi_port: 6231
+          ipmi_username: admin
+          ipmi_password: password
+        properties:
+          cpus: 1
+          cpu_arch: x86_64
+          memory_mb: 2048
+          local_gb: 11
+          capabilities: 'boot_mode:uefi'
+        resource_class: baremetal
+        network_interface: neutron
+        ports:
+        - address: "22:57:f8:dd:fe:00"
+          physical_network: dataplane
+          local_link_connection:
+            switch_id: "22:57:f8:dd:fe:aa"
+            switch_info: nexus.example.com
+            port_id: eth1/3
+- name: Create nxos_bm0 ironic node
+  become: true
+  become_user: stack
+  shell: |
+    source /opt/stack/devstack/openrc admin
+    openstack baremetal create /opt/stack/nxos_bm0.yaml
+    openstack baremetal node add trait nxos_bm0 CUSTOM_GOLD
+    openstack baremetal node manage nxos_bm0 --wait
+    openstack baremetal node provide nxos_bm0 --wait
+  args:
+    executable: /bin/bash
+- name: Run nova-manage cell_v2 discover_hosts
+  become: true
+  become_user: stack
+  shell: |
+    nova-manage cell_v2 discover_hosts

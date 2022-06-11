@@ -1,0 +1,8 @@
+---
+- name: Configure nxos - lab hypervisor infra
+  when: inventory_hostname == 'lab'
+  block:
+    - import_tasks: dhcp.yaml
+    - import_tasks: poap.yaml
+    - import_tasks: bridge_interfaces.yaml
+    - import_tasks: libvirt.yaml

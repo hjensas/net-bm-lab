@@ -1,0 +1,13 @@
+---
+- name: Create Virtual BMC user for the lab
+  become: true
+  ansible.builtin.user:
+    create_home: true
+    generate_ssh_key: true
+    groups:
+      - libvirt
+    name: "{{ vbmc_user }}"
+    home: "{{ vbmc_user_home }}"
+    shell: "/bin/bash"
+    ssh_key_bits: 4096
+    state: present

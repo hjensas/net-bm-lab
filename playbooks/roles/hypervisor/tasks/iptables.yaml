@@ -1,0 +1,103 @@
+---
+- name: Firewall - Accept eveything on localhost
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept everything on lo
+    chain: INPUT
+    action: insert
+    rule_num: '1'
+    in_interface: lo
+    jump: ACCEPT
+- name: Firewall - ACCEPT established and related
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    rule_num: '2'
+    comment: Accept established and related
+    chain: INPUT
+    ctstate:
+      - ESTABLISHED
+      - RELATED
+    jump: ACCEPT
+- name: Firewall - Accept everything except incoming on enp1s0
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept everything except incoming on enp1s0
+    chain: INPUT
+    action: insert
+    rule_num: '3'
+    ctstate:
+      - NEW
+    in_interface: ! enp1s0
+    jump: ACCEPT
+- name: Firewall - Allow SSH
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept new SSH connections
+    chain: INPUT
+    action: insert
+    rule_num: '4'
+    protocol: tcp
+    destination_port: '22'
+    ctstate: NEW
+    syn: match
+    jump: ACCEPT
+- name: Firewall - Allow DHCP on br-lab
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept DHCP on br-lab
+    chain: INPUT
+    action: insert
+    rule_num: '5'
+    in_interface: br-lab
+    protocol: udp
+    destination_port: '67'
+    jump: ACCEPT
+- name: Firewall - Allow TFTP on br-lab
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept TFTP on br-lab
+    chain: INPUT
+    action: insert
+    rule_num: '6'
+    in_interface: br-lab
+    protocol: udp
+    destination_port: '69'
+    jump: ACCEPT
+- name: Firewall - Allow DNS on br-lab
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept DNS on br-lab
+    chain: INPUT
+    action: insert
+    rule_num: '7'
+    in_interface: br-lab
+    protocol: udp
+    destination_port: '53'
+    jump: ACCEPT
+- name: Firewall - Allow a range of BMC ports
+  become: true
+  ansible.builtin.iptables:
+    comment: Accept range of UDP orts for Virtual BMC 6230-6239
+    chain: INPUT
+    action: insert
+    rule_num: '8'
+    protocol: udp
+    destination_port: 6230:6239
+    jump: ACCEPT
+- name: Firewall - Masquerade out enp1s0
+  become: true
+  ansible.builtin.iptables:
+    comment: NAT traffic
+    table: nat
+    chain: POSTROUTING
+    out_interface: enp1s0
+    jump: MASQUERADE
+- name: Firewall - DENY everything else
+  become: true
+  ansible.builtin.iptables:
+    comment: Deny all
+    chain: INPUT
+    action: append
+    jump: REJECT
+    reject_with: icmp-port-unreachable

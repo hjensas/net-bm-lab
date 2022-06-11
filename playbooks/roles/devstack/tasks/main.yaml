@@ -1,0 +1,25 @@
+- name: Create devstack VM
+  when: inventory_hostname == 'lab'
+  block:
+    - import_tasks: packages.yaml
+    - import_tasks: dhcp.yaml
+    - import_tasks: libvirt.yaml
+
+- name: Configura devstack VM
+  when: inventory_hostname == 'devstack'
+  block:
+    - name: Wait for devstack instance too boot
+      wait_for_connection:
+        timeout: 600
+        delay: 10
+    - name: Gather facts for first time
+      setup:
+    - name: Update packages
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+    - import_tasks: growfs.yaml
+    - import_tasks: network.yaml
+    - import_tasks: user.yaml
+    - import_tasks: install_devstack.yaml
+    - import_tasks: post_config.yaml

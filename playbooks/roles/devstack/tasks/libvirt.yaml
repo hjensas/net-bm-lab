@@ -1,0 +1,50 @@
+---
+- name: Check devstack cloud image is in image cache
+  ansible.builtin.stat:
+    path: "{{ image_cache_dir}}/{{ devstack_image_url | basename }}"
+  register: stat_devstack_image_in_cache
+- name: Download devstack cloud image to image cache
+  when: not stat_devstack_image_in_cache.stat.exists
+  ansible.builtin.get_url:
+    url: "{{ devstack_image_url }}"
+    dest: "{{ image_cache_dir }}"
+- name: Check if devstack image exists
+  ansible.builtin.stat:
+    path: /var/lib/libvirt/images/devstack.img
+  register: stat_devstack_image
+- name: Prepare devstack image
+  when: not stat_devstack_image.stat.exists
+  block:
+    - name: Write devstack image
+      become: true
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ image_cache_dir}}/{{ devstack_image_url | basename }}"
+        dest: /var/lib/libvirt/images/devstack.img
+        mode: 0644
+    - name: Re-size devstack image
+      become: true
+      shell: |
+        qemu-img resize /var/lib/libvirt/images/devstack.img +15G
+    - name: Customize devstack image
+      become: true
+      ansible.builtin.shell: |
+        LIBGUESTFS_BACKEND=direct virt-customize \
+          -a /var/lib/libvirt/images/devstack.img \
+          --hostname devstack \
+          --root-password password:password \
+          --run-command 'netplan set ethernets.enp1s0.dhcp4=true' \
+          --run-command 'dpkg-reconfigure openssh-server' \
+          --ssh-inject root:file:{{ ssh_pub_key_path }}
+
+- name: Create devstack libvirt VM
+  become: true
+  community.libvirt.virt:
+    command: define
+    xml: "{{ lookup('file', 'devstack_libvirt.xml') }}"
+    autostart: yes
+- name: Start devstack libvirt VM
+  become: true
+  community.libvirt.virt:
+    name: devstack
+    state: running

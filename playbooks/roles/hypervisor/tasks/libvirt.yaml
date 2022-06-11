@@ -1,0 +1,32 @@
+---
+- name: Enable and start libvirtd service
+  become: true
+  ansible.builtin.systemd:
+    name: libvirtd.service
+    enabled: true
+    state: started
+- name: Disable and remove default network
+  become: true
+  community.libvirt.virt_net:
+    name: default
+    state: absent
+- name: Define br-lab network in libvirt
+  become: true
+  community.libvirt.virt_net:
+    name: br-lab
+    command: define
+    xml: '{{ lookup("file", "libvirt_br_lab.xml") }}'
+- name: Enable and Activate br-lab network in libvirt
+  become: true
+  community.libvirt.virt_net:
+    name: br-lab
+    state: active
+- name: Set Autostart for br-lab network in libvirt
+  become: true
+  community.libvirt.virt_net:
+    name: br-lab
+    autostart: yes
+- name: Create image cache directories
+  ansible.builtin.file:
+    path: "{{ image_cache_dir}}"
+    state: directory

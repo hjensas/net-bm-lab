@@ -1,0 +1,43 @@
+---
+- name: Write DHCP/TFTP server configuration
+  become: true
+  ansible.builtin.copy:
+    src: dnsmasq.conf
+    dest: /etc/dnsmasq.conf
+    mode: 0644
+    owner: root
+    group: root
+  register: dnsmasq_conf
+- name: Create dhcp-hostsdir and dhcp-optsdir
+  become: true
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    mode: 0755
+    owner: root
+    group: root
+  loop:
+    - /etc/dnsmasq.dhcp-hostsdir
+    - /etc/dnsmasq.dhcp-optsdir
+- name: Create tftpboot directory
+  become: true
+  ansible.builtin.file:
+    state: directory
+    path: /var/lib/tftpboot
+    mode: 0755
+    owner: root
+    group: root
+- name: Restart dnsmasq.service
+  when: dnsmasq_conf.changed
+  become: true
+  ansible.builtin.systemd:
+    name: dnsmasq.service
+    enabled: true
+    state: restarted
+- name: Ensure dnsmasq.service is running
+  become: true
+  ansible.builtin.systemd:
+    name: dnsmasq.service
+    enabled: true
+    state: started
+

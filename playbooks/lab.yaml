@@ -1,0 +1,9 @@
+- hosts: lab
+  roles:
+    - hypervisor
+    - nxos
+    - devstack
+- hosts: devstack
+  gather_facts: no
+  roles:
+    - devstack

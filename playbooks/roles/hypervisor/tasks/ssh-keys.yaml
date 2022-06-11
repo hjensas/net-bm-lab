@@ -1,0 +1,9 @@
+---
+- name: Ensure {{ ansible_env.HOME }}/.ssh exists
+  file:
+    path: "{{ ansible_env.HOME }}/.ssh"
+    state: directory
+    mode: 0700
+- name: Generate OpenSSH keypair
+  community.crypto.openssh_keypair:
+    path: "{{ ansible_env.HOME }}/.ssh/id_rsa"

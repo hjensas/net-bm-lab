@@ -1,0 +1,12 @@
+[connection]
+id=br-lab
+interface-name=br-lab
+type=bridge
+autoconnect=true
+
+[bridge]
+interface-name=br-lab
+
+[ipv4]
+address1=192.168.24.1/24
+method=manual

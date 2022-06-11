@@ -1,0 +1,12 @@
+---
+- name: Configure lab hypervisor infra
+  when: inventory_hostname == 'lab'
+  block:
+    - import_tasks: packages.yaml
+    - import_tasks: ssh-keys.yaml
+    - import_tasks: users.yaml
+    - import_tasks: virtualbmc.yaml
+    - import_tasks: network.yaml
+    - import_tasks: iptables.yaml
+    - import_tasks: libvirt.yaml
+    - import_tasks: dnsmasq.yaml

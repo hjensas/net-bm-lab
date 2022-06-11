@@ -1,0 +1,20 @@
+[connection]
+id=nx{{ '%03d' % item }}
+interface-name=nx{{ '%03d' % item }}
+type=bridge
+autoconnect=true
+
+[ipv4]
+method=disabled
+
+[ipv6]
+method=disabled
+
+[bridge]
+interface-name=nx{{ '%03d' % item }}
+ageing-time=0
+# Group forward mask 0x4000 to enable forwarding LLDP packets
+group-forward-mask=16384
+
+[802-3-ethernet]
+mtu=9000

@@ -1,0 +1,13 @@
+---
+- name: ensure packages are present
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - python3-libvirt
+      - python3-lxml
+      - dnsmasq
+      - network-manager
+      - python3-venv
+      - sshpass

@@ -1,0 +1,25 @@
+---
+all:
+  hosts:
+    lab:
+      ansible_host: localhost
+      ansible_connection: local
+    devstack:
+      ansible_host: 192.168.24.40
+      ansible_user: root
+      ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    nxos:
+      ansible_host: 192.168.24.21
+      ansible_user: admin
+      ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  vars:
+    ansible_user: stack
+    vbmc_user: vbmc
+    vbmc_user_home: "/home/{{ vbmc_user }}"
+    ssh_pub_key_path: "{{ ansible_env.HOME }}/.ssh/id_rsa.pub"
+    image_cache_dir: "{{ ansible_env.HOME }}/image_cache"
+    nxos_image: ../virtual-switch-images/nexus9500v64.10.2.3.F.qcow2
+    nxos_target_system_image: nxos64-cs.10.2.3.F.bin
+    veos_image: ../virtual-switch-images/vEOS64-lab-4.27.3F.vmdk
+    devstack_image_url: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+    networking_baremetal_gerrit_ref: refs/changes/33/840533/6
